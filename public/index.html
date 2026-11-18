@@ -1,0 +1,111 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Student Task Manager</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+      padding: 30px;
+      color: #222;
+    }
+    .container {
+      max-width: 650px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px 0;
+    }
+    input { max-width: 100%; }
+    button {
+      cursor: pointer;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+    li {
+      margin: 12px 0;
+      padding: 10px;
+      background: #f3f4f6;
+      border-radius: 5px;
+    }
+    .done { text-decoration: line-through; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Student Task Manager</h1>
+    <p>Organize your assignments and deadlines.</p>
+
+    <form id="taskForm">
+      <input id="title" placeholder="Assignment name" required>
+      <input id="dueDate" type="date">
+      <button type="submit">Add Task</button>
+    </form>
+
+    <h2>My Assignments</h2>
+    <ul id="taskList"></ul>
+  </div>
+
+  <script>
+    async function loadTasks() {
+      const response = await fetch("/tasks");
+      const tasks = await response.json();
+      const list = document.getElementById("taskList");
+      list.innerHTML = "";
+
+      tasks.forEach(task => {
+        const li = document.createElement("li");
+        const title = document.createElement("span");
+        title.textContent = task.title + " " + (task.due_date || "");
+        if (task.completed) title.className = "done";
+
+        const complete = document.createElement("button");
+        complete.textContent = "Complete";
+        complete.onclick = async () => {
+          await fetch("/tasks/" + task.id, {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({completed: 1})
+          });
+          loadTasks();
+        };
+
+        const remove = document.createElement("button");
+        remove.textContent = "Delete";
+        remove.onclick = async () => {
+          await fetch("/tasks/" + task.id, {method: "DELETE"});
+          loadTasks();
+        };
+
+        li.append(title, " ", complete, " ", remove);
+        list.appendChild(li);
+      });
+    }
+
+    document.getElementById("taskForm").onsubmit = async (event) => {
+      event.preventDefault();
+      await fetch("/tasks", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          title: document.getElementById("title").value,
+          due_date: document.getElementById("dueDate").value
+        })
+      });
+      event.target.reset();
+      loadTasks();
+    };
+
+    loadTasks();
+  </script>
+</body>
+</html>
