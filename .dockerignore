@@ -10,3 +10,4 @@ npm-debug.log
 coverage
 tasks.db
 *.db-journal
+README.md
